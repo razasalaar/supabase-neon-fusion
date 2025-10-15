@@ -20,21 +20,27 @@ app.use(cors());
 app.use(express.json());
 
 // Neon Database Connection
-const pool = new Pool({
-  connectionString: process.env.NEON_CONNECTION_STRING,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+let pool;
+try {
+  pool = new Pool({
+    connectionString: process.env.NEON_CONNECTION_STRING,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
 
-// Test database connection
-pool.on("connect", () => {
-  console.log("Connected to Neon database");
-});
+  // Test database connection
+  pool.on("connect", () => {
+    console.log("✅ Connected to Neon database");
+  });
 
-pool.on("error", (err) => {
-  console.error("Database connection error:", err);
-});
+  pool.on("error", (err) => {
+    console.error("❌ Database connection error:", err);
+  });
+} catch (error) {
+  console.error("❌ Failed to create database pool:", error);
+  // Don't crash the server if database connection fails
+}
 
 // API Routes
 
@@ -64,6 +70,13 @@ app.get("/api", (req, res) => {
 // Neon query endpoint
 app.post("/api/neon-query", async (req, res) => {
   try {
+    if (!pool) {
+      return res.status(500).json({
+        error: "Database not available",
+        message: "Database connection not established",
+      });
+    }
+
     const { query, params } = req.body;
 
     if (!query) {
@@ -92,6 +105,13 @@ app.post("/api/neon-query", async (req, res) => {
 // User sync endpoint
 app.post("/api/sync-user", async (req, res) => {
   try {
+    if (!pool) {
+      return res.status(500).json({
+        error: "Database not available",
+        message: "Database connection not established",
+      });
+    }
+
     const { id, email, name } = req.body;
 
     if (!id || !email) {
