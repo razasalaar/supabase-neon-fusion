@@ -17,16 +17,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { api, Workshop } from "@/lib/api";
+import { api, Product, Workshop } from "@/lib/api";
 import { toast } from "sonner";
 
-const AddProduct = () => {
+const EditProduct = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(false);
+  const [product, setProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     productName: "",
     itemNo: "",
@@ -37,31 +39,52 @@ const AddProduct = () => {
   });
 
   useEffect(() => {
-    fetchWorkshops();
-  }, [user?.id]);
+    if (id && user?.id) {
+      fetchData();
+    }
+  }, [id, user?.id]);
 
-  const fetchWorkshops = async () => {
-    if (!user?.id) return;
+  const fetchData = async () => {
+    if (!user?.id || !id) return;
 
     try {
-      const data = await api.getWorkshops(user.id);
-      setWorkshops(data);
+      const [productsData, workshopsData] = await Promise.all([
+        api.getAllProducts(user.id),
+        api.getWorkshops(user.id),
+      ]);
+
+      const foundProduct = productsData.find((p) => p.id === id);
+      if (!foundProduct) {
+        toast.error("Product not found");
+        navigate("/products");
+        return;
+      }
+
+      setProduct(foundProduct);
+      setWorkshops(workshopsData);
+
+      // Populate form with existing data
+      setFormData({
+        productName: foundProduct.product_name,
+        itemNo: foundProduct.item_no || "",
+        quantity: foundProduct.product_quantity.toString(),
+        costPerPiece: foundProduct.cost_per_piece.toString(),
+        sellPrice: foundProduct.sell_price_per_piece.toString(),
+        workshopId: foundProduct.workshop_id,
+      });
     } catch (error) {
-      console.error("Failed to fetch workshops:", error);
-      toast.error("Failed to load workshops");
+      console.error("Failed to fetch data:", error);
+      toast.error("Failed to load product data");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !formData.workshopId) {
-      toast.error("Please select a workshop");
-      return;
-    }
+    if (!user?.id || !id) return;
 
     try {
       setLoading(true);
-      await api.createProduct({
+      await api.updateProduct(id, {
         product_name: formData.productName,
         item_no: formData.itemNo || undefined,
         product_quantity: parseInt(formData.quantity),
@@ -70,43 +93,34 @@ const AddProduct = () => {
         workshop_id: formData.workshopId,
       });
 
-      toast.success("Product added successfully!");
+      toast.success("Product updated successfully!");
       navigate("/products");
     } catch (error) {
-      console.error("Failed to create product:", error);
-      toast.error("Failed to add product");
+      console.error("Failed to update product:", error);
+      toast.error("Failed to update product");
     } finally {
       setLoading(false);
     }
   };
 
-  if (workshops.length === 0) {
+  if (!product) {
     return (
       <DashboardLayout>
         <div className="max-w-2xl">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold">Add Product</h1>
+            <h1 className="text-3xl font-bold">Edit Product</h1>
             <p className="text-muted-foreground mt-2">
-              Add a new product to your inventory
+              Loading product data...
             </p>
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>No Workshops Available</CardTitle>
-              <CardDescription>
-                You need to create a workshop first
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Before adding products, you need to create at least one
-                workshop.
-              </p>
-              <Button onClick={() => navigate("/workshops")}>
-                Go to Workshops
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="rounded-lg border bg-card p-8 animate-pulse">
+            <div className="space-y-4">
+              <div className="h-4 bg-muted rounded w-3/4"></div>
+              <div className="h-10 bg-muted rounded"></div>
+              <div className="h-4 bg-muted rounded w-1/2"></div>
+              <div className="h-10 bg-muted rounded"></div>
+            </div>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -116,9 +130,9 @@ const AddProduct = () => {
     <DashboardLayout>
       <div className="max-w-2xl">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Add Product</h1>
+          <h1 className="text-3xl font-bold">Edit Product</h1>
           <p className="text-muted-foreground mt-2">
-            Add a new product to your inventory
+            Update the details of "{product.product_name}"
           </p>
         </div>
 
@@ -126,7 +140,7 @@ const AddProduct = () => {
           <CardHeader>
             <CardTitle>Product Details</CardTitle>
             <CardDescription>
-              Enter the details of your new product
+              Update the details of your product
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -236,7 +250,7 @@ const AddProduct = () => {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Adding..." : "Add Product"}
+                  {loading ? "Updating..." : "Update Product"}
                 </Button>
               </div>
             </form>
@@ -247,4 +261,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default EditProduct;

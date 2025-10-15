@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Workshops from "./pages/Workshops";
 import Products from "./pages/Products";
 import AddProduct from "./pages/AddProduct";
+import EditProduct from "./pages/EditProduct";
 import Sales from "./pages/Sales";
 import SalesHistory from "./pages/SalesHistory";
 import Storage from "./pages/Storage";
@@ -60,6 +61,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <AddProduct />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/edit-product/:id"
+              element={
+                <ProtectedRoute>
+                  <EditProduct />
                 </ProtectedRoute>
               }
             />

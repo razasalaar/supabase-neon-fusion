@@ -1,0 +1,31 @@
+{
+  "name": "supabase-neon-fusion-backend",
+  "version": "1.0.0",
+  "description": "Backend API server for Supabase Neon Fusion inventory management system",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "express",
+    "api",
+    "neon",
+    "postgresql",
+    "inventory",
+    "management"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
