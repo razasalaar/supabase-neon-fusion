@@ -3,12 +3,29 @@ services:
     name: supabase-neon-fusion-backend
     env: node
     rootDir: ./backend
+    plan: free # Use free tier
+    region: oregon # Choose closest region
+    branch: main # Deploy from main branch
     buildCommand: npm install
     startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true # Auto-deploy on git push
+    pullRequestPreviewsEnabled: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NEON_CONNECTION_STRING
-        sync: false # This will be set manually in Render dashboard
       - key: PORT
         value: 10000
+      - key: NEON_CONNECTION_STRING
+        sync: false # Set this manually in Render dashboard for security
+    # CORS settings for frontend
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: "*"
+      - path: /*
+        name: Access-Control-Allow-Methods
+        value: "GET, POST, PUT, DELETE, OPTIONS"
+      - path: /*
+        name: Access-Control-Allow-Headers
+        value: "Content-Type, Authorization"
