@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: supabase-neon-fusion-backend
+    env: node
+    rootDir: ./backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEON_CONNECTION_STRING
+        sync: false # This will be set manually in Render dashboard
+      - key: PORT
+        value: 10000
