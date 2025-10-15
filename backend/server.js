@@ -166,21 +166,23 @@ app.listen(PORT, () => {
   console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
   console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`🔗 Database connection: ${pool ? "Available" : "Not available"}`);
+  console.log(
+    `🔗 Database connection: ${pool ? "Available" : "Not available"}`
+  );
   console.log(`🌐 Server is ready to accept requests!`);
 });
 
 // Handle server errors
-app.on('error', (err) => {
-  console.error('❌ Server error:', err);
+app.on("error", (err) => {
+  console.error("❌ Server error:", err);
 });
 
-process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught Exception:', err);
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:", err);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
 });
 
 export default app;
