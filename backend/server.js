@@ -44,13 +44,24 @@ try {
 
 // API Routes
 
-// Health check
+// Health check - Simple version that always works
 app.get("/api/health", (req, res) => {
-  res.json({
+  console.log("Health check requested");
+  res.status(200).json({
     status: "OK",
     message: "Backend API server is running successfully!",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
+    port: process.env.PORT || 3001,
+  });
+});
+
+// Root health check
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "Supabase Neon Fusion Backend is running!",
+    status: "OK",
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -155,6 +166,21 @@ app.listen(PORT, () => {
   console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
   console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`🔗 Database connection: ${pool ? "Available" : "Not available"}`);
+  console.log(`🌐 Server is ready to accept requests!`);
+});
+
+// Handle server errors
+app.on('error', (err) => {
+  console.error('❌ Server error:', err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 export default app;
