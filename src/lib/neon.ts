@@ -10,9 +10,9 @@ export const createNeonQuery = async (query: string, params: any[] = []) => {
   try {
     const API_BASE_URL =
       import.meta.env.VITE_API_URL || "http://localhost:3001";
-    
+
     console.log(`🌐 Making API call to: ${API_BASE_URL}/api/neon-query`);
-    
+
     const response = await fetch(`${API_BASE_URL}/api/neon-query`, {
       method: "POST",
       headers: {
@@ -23,7 +23,9 @@ export const createNeonQuery = async (query: string, params: any[] = []) => {
 
     if (!response.ok) {
       if (response.status === 404) {
-        throw new Error("Backend API not found. Please ensure the backend is deployed and running.");
+        throw new Error(
+          "Backend API not found. Please ensure the backend is deployed and running."
+        );
       }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || "Database query failed");
@@ -32,12 +34,14 @@ export const createNeonQuery = async (query: string, params: any[] = []) => {
     return response.json();
   } catch (error) {
     console.error("Neon query error:", error);
-    
+
     // Check if it's a network error (backend not available)
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error("Cannot connect to backend API. Please ensure the backend server is running.");
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new Error(
+        "Cannot connect to backend API. Please ensure the backend server is running."
+      );
     }
-    
+
     throw error;
   }
 };
