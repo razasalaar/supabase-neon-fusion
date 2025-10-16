@@ -26,6 +26,8 @@ let dbConnected = false;
 // Initialize database connection asynchronously
 async function initializeDatabase() {
   try {
+    console.log("🔍 Checking database configuration...");
+
     if (!process.env.NEON_CONNECTION_STRING) {
       console.log(
         "⚠️  NEON_CONNECTION_STRING not found, running without database"
@@ -33,6 +35,7 @@ async function initializeDatabase() {
       return;
     }
 
+    console.log("🔗 Initializing database connection...");
     pool = new Pool({
       connectionString: process.env.NEON_CONNECTION_STRING,
       ssl: {
@@ -52,6 +55,7 @@ async function initializeDatabase() {
     });
 
     // Test the connection
+    console.log("🧪 Testing database connection...");
     const client = await pool.connect();
     await client.query("SELECT NOW()");
     client.release();
@@ -59,6 +63,7 @@ async function initializeDatabase() {
     console.log("✅ Database connection test successful");
   } catch (error) {
     console.error("❌ Failed to initialize database:", error.message);
+    console.error("📝 Database error details:", error);
     dbConnected = false;
     // Don't crash the server if database connection fails
   }
@@ -191,13 +196,17 @@ if (process.env.NODE_ENV === "production") {
 // Start server
 async function startServer() {
   try {
+    console.log("🚀 Starting server...");
+    console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`🔧 Port: ${PORT}`);
+
     // Initialize database connection (non-blocking)
     initializeDatabase().catch((err) => {
       console.error("Database initialization failed:", err.message);
     });
 
     // Start the server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Backend server running on port ${PORT}`);
       console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
       console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
@@ -206,6 +215,15 @@ async function startServer() {
         `🔗 Database connection: ${dbConnected ? "Available" : "Not available"}`
       );
       console.log(`🌐 Server is ready to accept requests!`);
+    });
+
+    // Handle server errors
+    server.on("error", (err) => {
+      console.error("❌ Server error:", err);
+      if (err.code === "EADDRINUSE") {
+        console.error(`❌ Port ${PORT} is already in use`);
+        process.exit(1);
+      }
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
