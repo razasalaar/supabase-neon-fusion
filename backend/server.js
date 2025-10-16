@@ -21,25 +21,47 @@ app.use(express.json());
 
 // Neon Database Connection
 let pool;
-try {
-  pool = new Pool({
-    connectionString: process.env.NEON_CONNECTION_STRING,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  });
+let dbConnected = false;
 
-  // Test database connection
-  pool.on("connect", () => {
-    console.log("✅ Connected to Neon database");
-  });
+// Initialize database connection asynchronously
+async function initializeDatabase() {
+  try {
+    if (!process.env.NEON_CONNECTION_STRING) {
+      console.log(
+        "⚠️  NEON_CONNECTION_STRING not found, running without database"
+      );
+      return;
+    }
 
-  pool.on("error", (err) => {
-    console.error("❌ Database connection error:", err);
-  });
-} catch (error) {
-  console.error("❌ Failed to create database pool:", error);
-  // Don't crash the server if database connection fails
+    pool = new Pool({
+      connectionString: process.env.NEON_CONNECTION_STRING,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    // Test database connection
+    pool.on("connect", () => {
+      console.log("✅ Connected to Neon database");
+      dbConnected = true;
+    });
+
+    pool.on("error", (err) => {
+      console.error("❌ Database connection error:", err);
+      dbConnected = false;
+    });
+
+    // Test the connection
+    const client = await pool.connect();
+    await client.query("SELECT NOW()");
+    client.release();
+    dbConnected = true;
+    console.log("✅ Database connection test successful");
+  } catch (error) {
+    console.error("❌ Failed to initialize database:", error.message);
+    dbConnected = false;
+    // Don't crash the server if database connection fails
+  }
 }
 
 // API Routes
@@ -53,15 +75,19 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
     port: process.env.PORT || 3001,
+    database: dbConnected ? "Connected" : "Not connected",
+    uptime: process.uptime(),
   });
 });
 
-// Root health check
+// Root health check - Railway uses this for health checks
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "Supabase Neon Fusion Backend is running!",
     status: "OK",
     timestamp: new Date().toISOString(),
+    database: dbConnected ? "Connected" : "Not connected",
+    uptime: process.uptime(),
   });
 });
 
@@ -81,10 +107,11 @@ app.get("/api", (req, res) => {
 // Neon query endpoint
 app.post("/api/neon-query", async (req, res) => {
   try {
-    if (!pool) {
-      return res.status(500).json({
+    if (!pool || !dbConnected) {
+      return res.status(503).json({
         error: "Database not available",
         message: "Database connection not established",
+        status: "Service Unavailable",
       });
     }
 
@@ -116,10 +143,11 @@ app.post("/api/neon-query", async (req, res) => {
 // User sync endpoint
 app.post("/api/sync-user", async (req, res) => {
   try {
-    if (!pool) {
-      return res.status(500).json({
+    if (!pool || !dbConnected) {
+      return res.status(503).json({
         error: "Database not available",
         message: "Database connection not established",
+        status: "Service Unavailable",
       });
     }
 
@@ -161,16 +189,32 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Backend server running on port ${PORT}`);
-  console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(
-    `🔗 Database connection: ${pool ? "Available" : "Not available"}`
-  );
-  console.log(`🌐 Server is ready to accept requests!`);
-});
+async function startServer() {
+  try {
+    // Initialize database connection (non-blocking)
+    initializeDatabase().catch((err) => {
+      console.error("Database initialization failed:", err.message);
+    });
+
+    // Start the server
+    app.listen(PORT, () => {
+      console.log(`🚀 Backend server running on port ${PORT}`);
+      console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
+      console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+      console.log(
+        `🔗 Database connection: ${dbConnected ? "Available" : "Not available"}`
+      );
+      console.log(`🌐 Server is ready to accept requests!`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
 
 // Handle server errors
 app.on("error", (err) => {
