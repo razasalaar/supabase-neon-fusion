@@ -319,12 +319,12 @@ app.get("/api/health", (req, res) => {
 app.get("/", (req, res) => {
   res.json({
     message: "Welcome to Backend API",
-    endpoints: ["/api/health", "/api/query", "/api/sync-user"],
+    endpoints: ["/api/health", "/api/neon-query", "/api/sync-user"],
   });
 });
 
-// Query Endpoint
-app.post("/api/query", async (req, res) => {
+// Query Endpoint (keeping original name for frontend compatibility)
+app.post("/api/neon-query", async (req, res) => {
   try {
     if (!pool || !dbConnected)
       return res.status(503).json({ error: "Database not connected" });
@@ -333,7 +333,11 @@ app.post("/api/query", async (req, res) => {
     if (!query) return res.status(400).json({ error: "Query is required" });
 
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    res.json({
+      rows: result.rows,
+      rowCount: result.rowCount,
+      command: result.command,
+    });
   } catch (err) {
     console.error("❌ Query Error:", err);
     res.status(500).json({ error: err.message });
