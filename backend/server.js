@@ -384,9 +384,35 @@ if (process.env.NODE_ENV === "production") {
 // ==========================
 // Start Server
 // ==========================
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  await connectDatabase();
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔧 PORT from env: ${process.env.PORT}`);
+  console.log(`📡 Health check available at: http://localhost:${PORT}/api/health`);
+  
+  try {
+    await connectDatabase();
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+  }
+});
+
+// Handle server errors
+server.on('error', (err) => {
+  console.error('❌ Server error:', err);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use`);
+  }
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 export default app;
