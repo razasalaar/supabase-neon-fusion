@@ -10,9 +10,9 @@ export const createNeonQuery = async (query: string, params: any[] = []) => {
   try {
     const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-    console.log(`🌐 Making API call to: ${API_BASE_URL}/funtions/neon-query`);
+    console.log(`🌐 Making API call to: ${API_BASE_URL}/api/neon-query`);
 
-    const response = await fetch(`${API_BASE_URL}/funtions/neon-query`, {
+    const response = await fetch(`${API_BASE_URL}/api/neon-query`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
